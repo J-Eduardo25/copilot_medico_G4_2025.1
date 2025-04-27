@@ -1,0 +1,23 @@
+{
+    "manifest_version" : 3,
+    "version": "1.0.0",
+    "name": "Copmed Extension",
+    "action": {
+        "default_popup": "index.html"
+    },
+    "background": {
+        "service_worker": "background.js"
+    },
+    "permissions": [
+        "scripting",
+        "activeTab",
+        "*://localhost/*"
+    ],
+    "host_permissions": [
+        "http://*/*",
+        "https://*/*"
+    ],
+    "icons": {
+        "32": "icon32.png"
+    }
+}

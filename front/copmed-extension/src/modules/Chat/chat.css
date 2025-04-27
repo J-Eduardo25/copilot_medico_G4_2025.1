@@ -1,0 +1,123 @@
+/* Estilos base */
+#root {
+    max-width: 360px;
+    margin: 0 auto;
+    padding: 1rem;
+    text-align: center;
+  }
+  
+  .card {
+    padding: 0.75rem;
+  }
+  
+  /* chat.css */
+  .chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 480px;
+    width: 320px;
+    margin: 0 auto;
+    background-color: #f3f4f6;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+  }
+  
+  .chat-header {
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .chat-title {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #1f2937;
+    margin: 0;
+  }
+  
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .chat-message-wrapper {
+    display: flex;
+    margin-bottom: 0.75rem;
+  }
+  
+  .chat-message-user {
+    justify-content: flex-end;
+  }
+  
+  .chat-message-bot {
+    justify-content: flex-start;
+  }
+  
+  .chat-message {
+    max-width: 80%;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+  }
+  
+  .chat-message-user .chat-message {
+    background-color: #3b82f6;
+    color: white;
+  }
+  
+  .chat-message-bot .chat-message {
+    background-color: #e5e7eb;
+    color: #1f2937;
+  }
+  
+  .chat-message-text {
+    margin: 0;
+    font-size: 0.875rem;
+  }
+  
+  .chat-message-timestamp {
+    display: block;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    opacity: 0.75;
+  }
+  
+  .chat-form {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .chat-input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    outline: none;
+  }
+  
+  .chat-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  }
+  
+  .chat-send-button {
+    background-color: #3b82f6;
+    color: white;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .chat-send-button:hover {
+    background-color: #2563eb;
+  }
