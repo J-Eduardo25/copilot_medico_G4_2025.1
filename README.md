@@ -2,9 +2,14 @@
 
 **Co-pilot Médico**
 
-Desenvolvido com base no prontuário da Amplimed (sistema de gestão de clínicas)
+Versão1.0 - Desenvolvido com base no prontuário da Amplimed (sistema de gestão de clínicas).
 
-## Requisitos
+Versão 2.0 (em desenvolvimento) - Processamento de dados oriundos de exames (leitura de documentos) e conversa entre o profissional e o paciente).
+
+## Visão Geral
+O Co-pilot tem por objetivo geral apoiar o profissional de medicina no processo de atendimento clínico, fornecendo insigths relativos ao diagnóstico e tratamento a partir da coleta de dados (prontuário, documentos e conversa) durante a consulta.
+
++ Configurações de ambiente
 
 ### Backend
 - **Linguagens e Frameworks**:
