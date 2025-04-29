@@ -17,14 +17,7 @@ O Co-pilot tem por objetivo geral apoiar o profissional de medicina no processo 
   - Flask (3.0.3)
   - API OpenAi (Version: 1.56.1)
 
-### Frontend
-- **Tecnologias**:
-  - JavaScript (v18.12.1)
-  - Extensão Chrome ("manifest_version" : 3)
-  - Node
-
-#### Backend
-
+- **Procedimentos de configuração**:
 1. Instale o Flask e a biblioteca OpenAI executando:
    ```bash
    pip install openai flask
@@ -36,8 +29,13 @@ O Co-pilot tem por objetivo geral apoiar o profissional de medicina no processo 
    python server.py
    ```
 
-#### Frontend
+### Frontend
+- **Tecnologias**:
+  - JavaScript (v18.12.1)
+  - Extensão Chrome ("manifest_version" : 3)
+  - Node
 
+- **Procedimentos de configuração**:
 1. Navegue para o diretório `front/copmed-extension`:
    ```bash
    cd front/copmed-extension
