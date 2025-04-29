@@ -9,9 +9,9 @@ Versão 2.0 (em desenvolvimento) - Processamento de dados oriundos de exames (le
 ## Visão Geral
 O Co-pilot tem por objetivo geral apoiar o profissional de medicina no processo de atendimento clínico, fornecendo insigths relativos ao diagnóstico e tratamento a partir da coleta de dados (prontuário, documentos e conversa) durante a consulta.
 
-+ Configurações de ambiente
+## Configurações de ambiente
 
-### Backend
+# Backend
 - **Linguagens e Frameworks**:
   - Python (3.11.2)
   - Flask (3.0.3)
