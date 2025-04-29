@@ -11,7 +11,7 @@ O Co-pilot tem por objetivo geral apoiar o profissional de medicina no processo 
 
 ## Configurações de ambiente
 
-# Backend
+### Backend
 - **Linguagens e Frameworks**:
   - Python (3.11.2)
   - Flask (3.0.3)
@@ -55,9 +55,9 @@ O Co-pilot tem por objetivo geral apoiar o profissional de medicina no processo 
 
 ---
 
-## Usando a Extensão no Chrome
+### Usando a Extensão no Chrome
 
-### Passo a Passo para Carregar a Extensão no Modo Desenvolvedor
+-**Passo a Passo para Carregar a Extensão no Modo Desenvolvedor**
 
 1. Abra o Chrome e acesse a página de extensões:
    - No navegador, clique em **Menu (três pontos no canto superior direito) > Mais ferramentas > Extensões**, ou simplesmente acesse `chrome://extensions` na barra de endereço.
