@@ -70,3 +70,6 @@ Desenvolvido com base no prontuário da Amplimed (sistema de gestão de clínica
    - A extensão deve aparecer na sua barra de ferramentas. Clique nela para começar a usar!
 
 ---
+
+Grupo:
+Gabriel Cortez
