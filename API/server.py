@@ -6,7 +6,7 @@ import openai
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from backend import openai_connection  # Importa o script de conexão com a OpenAI
+# from backend import openai_connection  # Importa o script de conexão com a OpenAI
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS to allow requests from your React app
@@ -15,8 +15,11 @@ CORS(app)  # Enable CORS to allow requests from your React app
 def receive_extracted_data():
     try:
         # Receber os dados do front-end
+        print("aiaiai")
         data = request.json
+        print(data)
         
+        nome_do_paciente = ""
         # Imprimir dados recebidos
         # print("Dados recebidos do front-end:")
         # print(json.dumps(data, indent=2, ensure_ascii=False))
@@ -25,21 +28,25 @@ def receive_extracted_data():
         formatted_patient_data = "Dados do paciente:\n"
         for item in data:
             formatted_patient_data += f"{item['role']}: {item['text']}\n"
+            if nome_do_paciente == "":
+                nome_do_paciente = item
+                print(nome_do_paciente)
         
-        # Adicionar os dados do paciente à conversa
-        openai_connection.messages.append({"role": "user", "content": formatted_patient_data})
+        # # Adicionar os dados do paciente à conversa
+        # openai_connection.messages.append({"role": "user", "content": formatted_patient_data})
         
-        # Obter resposta da IA
-        completion = openai.chat.completions.create(
-            model="gpt-4",
-            messages=openai_connection.messages,
-        )
+        # # Obter resposta da IA
+        # completion = openai.chat.completions.create(
+        #     model="gpt-4",
+        #     messages=openai_connection.messages,
+        # )
         
-        # Obter e imprimir a resposta
-        response = completion.choices[0].message.content
-        # print("\nResposta da IA:")
-        # print(response)
+        # # Obter e imprimir a resposta
+        # response = completion.choices[0].message.content
+        # # print("\nResposta da IA:")
+        # # print(response)
         
+        response = f"Obrigado,{nome_do_paciente}! Com essas informações posso lhe atender melhor."
         
         
         # Retornar a resposta da IA para o front-end (opcional)

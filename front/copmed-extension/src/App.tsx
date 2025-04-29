@@ -11,7 +11,7 @@ function App() {
 
 
   const [messages, setMessages] = useState([
-    { id: 1, text: "Olá! Como posso ajudar?", sender: "bot", timestamp: new Date().toLocaleTimeString() },
+    { id: 1, text: "Olá! Antes de tudo, digite seus dados da seguinte ordem: Nome, Sintoma, Número de Celular", sender: "bot", timestamp: new Date().toLocaleTimeString() },
   ]);
 
   
