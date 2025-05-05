@@ -18,19 +18,21 @@
 
 #### Backend
 
-1. Instale o Flask e a biblioteca OpenAI executando, no terminal do backend:
+1. Instale o Flask executando, no terminal do backend:
   
   ```bash
-  pip install google-generativeai Flask Flask-CORS
+  pip install google-generativeai Flask 
   ```
 
   ou 
 
    ```bash
-  npm install google-generativeai Flask Flask-CORS
+  npm install google-generativeai Flask 
    ```
 
-2. Gere uma chave API do gemini no site deles e coloque-a nas variáveis de ambiente do seu sistema
+2. instale, também no diretório do backend, a biblioteca do google generative ai para usar o gemini
+
+3. Gere uma chave API do gemini no site deles e coloque-a nas variáveis de ambiente do seu sistema
    
 #### Frontend
 
