@@ -29,6 +29,8 @@
    ```bash
   npm install google-generativeai Flask Flask-CORS
    ```
+
+2. Gere uma chave API do gemini no site deles e coloque-a nas variáveis de ambiente do seu sistema
    
 #### Frontend
 
