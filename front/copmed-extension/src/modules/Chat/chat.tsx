@@ -14,11 +14,24 @@ interface ChatProps {
   setMessages: React.Dispatch<React.SetStateAction<any>>; // Mantém para adicionar msg do user
   onSendMessage: (messageText: string) => void; // Função para notificar App.js
   isLoading: boolean; // Para mostrar feedback de carregamento/desabilitar input
+  onUploadPdf?: (file: File) => void; // <-- Novo prop opcional
 }
 
-const Chat: React.FC<ChatProps> = ({ messages, setMessages, onSendMessage, isLoading }) => {
+const Chat: React.FC<ChatProps> = ({ messages, setMessages, onSendMessage, isLoading, onUploadPdf }) => {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<null | HTMLDivElement>(null); // Ref para scroll automático
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click(); // Simula clique no input escondido
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onUploadPdf) {
+      onUploadPdf(file);
+    }
+  };
 
   // Função para scrollar para a última mensagem
   const scrollToBottom = () => {
@@ -61,7 +74,7 @@ const Chat: React.FC<ChatProps> = ({ messages, setMessages, onSendMessage, isLoa
       <div className="chat-header">
         <h2 className="chat-title">Copilot Médico</h2>
       </div>
-
+  
       {/* Área das Mensagens */}
       <div className="chat-messages">
         {messages.map((message) => (
@@ -77,38 +90,58 @@ const Chat: React.FC<ChatProps> = ({ messages, setMessages, onSendMessage, isLoa
             </div>
           </div>
         ))}
-        {/* Opcional: Indicador de Loading */}
         {isLoading && (
           <div className="chat-message-wrapper chat-message-bot">
-             <div className="chat-message">
-               <p className="chat-message-text chat-loading-indicator"><i>Digitando...</i></p>
+            <div className="chat-message">
+              <p className="chat-message-text chat-loading-indicator"><i>Digitando...</i></p>
             </div>
           </div>
         )}
-        {/* Elemento vazio no final para ajudar no scroll */}
         <div ref={messagesEndRef} />
       </div>
-
-      {/* Formulário de Input */}
+  
+      {/* Formulário de Input + Upload */}
       <form onSubmit={handleFormSubmit} className="chat-form">
+        {/* Botão de Upload PDF */}
+        <input
+          type="file"
+          accept="application/pdf"
+          style={{ display: 'none' }}
+          ref={fileInputRef}
+          onChange={handleFileChange}
+        />
+        <button
+          type="button"
+          className="chat-upload-button"
+          onClick={handleUploadClick}
+          disabled={isLoading}
+          title="Enviar PDF"
+        >
+          📄
+        </button>
+  
+        {/* Campo de texto */}
         <input
           type="text"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder={isLoading ? "Aguardando resposta..." : "Digite sua mensagem..."}
           className="chat-input"
-          disabled={isLoading} // 7. Desabilita input enquanto espera
+          disabled={isLoading}
         />
+  
+        {/* Botão de Enviar */}
         <button
           type="submit"
           className="chat-send-button"
-          disabled={isLoading || newMessage.trim() === ""} // 8. Desabilita botão
+          disabled={isLoading || newMessage.trim() === ""}
         >
           <Send size={20} />
         </button>
       </form>
     </div>
   );
+  
 };
 
 export default Chat;

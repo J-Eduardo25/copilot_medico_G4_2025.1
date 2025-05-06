@@ -47,6 +47,63 @@ function App() {
     }
   );
 
+  const handleUploadPdf = async (file: File) => {
+    const formData = new FormData();
+    formData.append('pdf', file);
+  
+    setIsLoading(true); // Mostra indicador de carregamento
+  
+    try {
+      const response = await fetch('http://localhost:3001/api/upload-pdf', {
+        method: 'POST',
+        body: formData
+      });
+  
+      setIsLoading(false); // Encerra carregamento
+  
+      if (response.ok) {
+        const data = await response.json();
+  
+        if (data.ai_response) {
+          const botMessage: Message = {
+            id: generateId(),
+            text: data.ai_response,
+            sender: 'bot',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+          setMessages(prev => [...prev, botMessage]);
+        } else {
+          const errMsg: Message = {
+            id: generateId(),
+            text: "PDF enviado, mas a IA não respondeu corretamente.",
+            sender: 'bot',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+          setMessages(prev => [...prev, errMsg]);
+        }
+      } else {
+        const errMsg: Message = {
+          id: generateId(),
+          text: `Erro ao processar PDF (${response.status})`,
+          sender: 'bot',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setMessages(prev => [...prev, errMsg]);
+      }
+    } catch (error) {
+      console.error("Erro ao enviar PDF:", error);
+      setIsLoading(false);
+      const errMsg: Message = {
+        id: generateId(),
+        text: "❌ Erro de rede ao enviar PDF ou processar resposta.",
+        sender: 'bot',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages(prev => [...prev, errMsg]);
+    }
+  };
+  
+
   const createInputs = async () => {
     const inputKeys = ["peso", "altura", "imc", "tempe", "freqres", "freqcar", "pas", "pad"]
     let inputs = []
@@ -243,6 +300,7 @@ function App() {
         setMessages={setMessages}       // Passa a função para o Chat adicionar a msg do usuário
         onSendMessage={handleSendMessage} // Passa a função para o Chat chamar ao enviar
         isLoading={isLoading}         // Passa o estado de carregamento
+        onUploadPdf={handleUploadPdf} 
       />
 
       {/* Card com os botões de Debug e Extração (Mantidos como no seu original) */}

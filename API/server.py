@@ -8,6 +8,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 # Modificado: Importa o novo script de conexão com o Gemini
 from backend import gemini_connection # Assume que gemini_connection.py está em backend/
+from backend import pdf_reader
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS
@@ -90,6 +91,41 @@ def handle_chat_message():
         traceback.print_exc()
         # Retorna erro
         return jsonify({"status": "error", "message": f"Erro interno do servidor ao processar chat: {e}"}), 500
+
+
+@app.route('/api/upload-pdf', methods=['POST'])
+def upload_pdf():
+    try:
+        if 'pdf' not in request.files:
+            return jsonify({"status": "error", "message": "Nenhum arquivo enviado."}), 400
+
+        file = request.files['pdf']
+        if file.filename == '':
+            return jsonify({"status": "error", "message": "Nome de arquivo vazio."}), 400
+
+        # Extrair texto do PDF
+        extracted_text = pdf_reader.extract_text_from_pdf(file)
+        print(f"Texto extraído do PDF:\n{extracted_text}")
+
+        if not extracted_text.strip():
+            return jsonify({"status": "error", "message": "Texto extraído está vazio."}), 400
+
+        # Enviar esse texto como mensagem para a IA (como em /api/chat)
+        ai_response_text = gemini_connection.send_message(extracted_text)
+
+        # Retornar a resposta da IA
+        return jsonify({
+            "status": "success",
+            "message": "Texto extraído e enviado para a IA com sucesso.",
+            "extracted_text": extracted_text,
+            "ai_response": ai_response_text
+        }), 200
+
+    except Exception as e:
+        print(f"Erro ao processar upload de PDF: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": f"Erro interno ao processar o PDF: {e}"}), 500
 
 if __name__ == '__main__':
 
