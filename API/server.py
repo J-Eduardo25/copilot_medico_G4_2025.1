@@ -9,6 +9,7 @@ from flask_cors import CORS
 # Modificado: Importa o novo script de conexão com o Gemini
 from backend import gemini_connection # Assume que gemini_connection.py está em backend/
 from backend import pdf_reader
+from backend import text_filter
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS
@@ -75,6 +76,8 @@ def handle_chat_message():
 
         # 2. Enviar a mensagem para a IA usando a função já existente
         #    A sessão de chat (histórico) é gerenciada dentro de gemini_connection
+        user_message = text_filter.remover_nomes(user_message)
+        # print(user_message)
         ai_response_text = gemini_connection.send_message(user_message)
 
 
@@ -105,12 +108,14 @@ def upload_pdf():
 
         # Extrair texto do PDF
         extracted_text = pdf_reader.extract_text_from_pdf(file)
-        print(f"Texto extraído do PDF:\n{extracted_text}")
+        # print(f"Texto extraído do PDF:\n{extracted_text}")
 
         if not extracted_text.strip():
             return jsonify({"status": "error", "message": "Texto extraído está vazio."}), 400
 
         # Enviar esse texto como mensagem para a IA (como em /api/chat)
+        extracted_text = text_filter.remover_nomes(extracted_text)
+        # print(extracted_text)
         ai_response_text = gemini_connection.send_message(extracted_text)
 
         # Retornar a resposta da IA
