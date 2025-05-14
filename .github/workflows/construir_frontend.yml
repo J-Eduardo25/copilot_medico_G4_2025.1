@@ -3,12 +3,12 @@ name: Construir Frontend (Extensão)
 on:
   push:
     branches:
-      - ambiente_de_testes(implementacao)  
+      - ambiente-de-testes-implementacao 
     paths:
       - 'front/copmed-extension/**' 
   pull_request:
     branches:
-      - ambiente_de_testes(implementacao)
+      - ambiente-de-testes-implementacao
     paths:
       - 'front/copmed-extension/**' 
 
