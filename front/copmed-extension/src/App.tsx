@@ -3,6 +3,7 @@ import './App.css';
 import Chat from './modules/Chat/chat'; // Importa o componente Chat
 import { executeScriptOnActiveTab } from './utils/utils'; // Sua função utilitária
 
+
 // Define a estrutura exata esperada para cada objeto de mensagem
 type Message = {
   id: Key;

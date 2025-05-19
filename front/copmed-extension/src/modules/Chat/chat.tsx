@@ -112,12 +112,13 @@ const Chat: React.FC<ChatProps> = ({ messages, setMessages, onSendMessage, isLoa
         />
         <button
           type="button"
-          className="chat-upload-button"
+          className="chat-send-button"
           onClick={handleUploadClick}
           disabled={isLoading}
           title="Enviar PDF"
+         style={{ fontSize: "1.3rem" }} 
         >
-          📄
+           📤
         </button>
   
         {/* Campo de texto */}
@@ -136,7 +137,7 @@ const Chat: React.FC<ChatProps> = ({ messages, setMessages, onSendMessage, isLoa
           className="chat-send-button"
           disabled={isLoading || newMessage.trim() === ""}
         >
-          <Send size={20} />
+          <Send size={24} />
         </button>
       </form>
     </div>
