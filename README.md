@@ -5,10 +5,11 @@
 ## Requisitos
 
 ### Backend
-- **Linguagens e Frameworks**:
+- **Tecnologias**:
   - Python (3.11.2)
   - Flask (3.0.3)
   - API Gemini
+  - PyPDF2
 
 ### Frontend
 - **Tecnologias**:
@@ -21,7 +22,7 @@
 1. Instale o Flask executando, no terminal do backend:
   
   ```bash
-  pip install google-generativeai Flask 
+  pip install google-generativeai Flask PyPDF2
   ```
 
   ou 
@@ -32,7 +33,7 @@
 
 2. instale, também no diretório do backend, a biblioteca do google generative ai para usar o gemini
 
-3. Gere uma chave API do gemini no site deles e coloque-a nas variáveis de ambiente do seu sistema
+3. Gere uma chave API do gemini no site deles e coloque-a nas variáveis de ambiente do seu sistema em PATH
    
 #### Frontend
 
@@ -68,8 +69,13 @@
 3. Carregue a extensão:
    - Clique no botão **Carregar sem compactação** (ou **Load unpacked**).
    - Navegue até o diretório `dist` gerado no passo anterior e selecione-o.
+  
+4. Inicie o servidor:
+   ```bash
+   python server.py
+   ```
 
-4. Teste a extensão:
+5. Teste a extensão:
    - A extensão deve aparecer na sua barra de ferramentas. Clique nela para começar a usar!
 
 ---
