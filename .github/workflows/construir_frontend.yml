@@ -3,6 +3,14 @@ name: Construir Frontend (Extensão)
 on:
   push:
     branches:
+      - main
+      - branch_de_desenvolvimento 
+      - ambiente-de-testes-implementacao
+
+  pull_request:
+    branches:
+      - branch_de_desenvolvimento
+      - main
       - ambiente-de-testes-implementacao
 
 jobs:
