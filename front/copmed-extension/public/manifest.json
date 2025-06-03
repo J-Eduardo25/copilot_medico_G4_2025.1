@@ -11,6 +11,7 @@
     "permissions": [
         "scripting",
         "activeTab",
+        "storage",
         "*://localhost/*"
     ],
     "host_permissions": [
@@ -18,6 +19,8 @@
         "https://*/*"
     ],
     "icons": {
-        "32": "copilot-icon.png"
+        "32": "copilot-icon.png",
+        "48": "CopMed_LogoBig.png",
+        "128": "CopMed_LogoBig.png"
     }
 }

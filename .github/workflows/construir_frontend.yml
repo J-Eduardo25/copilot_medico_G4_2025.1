@@ -1,0 +1,50 @@
+name: Construir Frontend (Extensão)
+
+on:
+  push:
+    branches:
+      - main
+      - branch_de_desenvolvimento 
+      - ambiente-de-testes-implementacao
+
+  pull_request:
+    branches:
+      - branch_de_desenvolvimento
+      - main
+      - ambiente-de-testes-implementacao
+
+jobs:
+  build-frontend-extension:
+    name: "Construir Pasta 'dist' da Extensão Frontend"
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./front/copmed-extension
+
+    steps:
+      - name: "1. Baixar o código do repositório"
+        uses: actions/checkout@v4
+
+      - name: "2. Configurar ambiente Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: front/copmed-extension/package-lock.json
+
+      - name: "3. Instalar dependências do Frontend"
+        run: npm ci
+
+      - name: "4. Construir o Frontend (gerar pasta 'dist')"
+        run: npm run build
+
+      - name: "5. Compactar a pasta 'dist' do Frontend"
+        run: zip -r extension-dist.zip ./dist
+
+      - name: "6. Fazer upload da pasta 'dist' compactada como Artefato"
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-dist-package
+          path: ./front/copmed-extension/extension-dist.zip
+          retention-days: 7
