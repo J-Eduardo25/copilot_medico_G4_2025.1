@@ -1,101 +1,117 @@
 import sys
 import os
 import json
-
-# Removido: import openai
+import uuid # Para gerar IDs
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-# Modificado: Importa o novo script de conexão com o Gemini
-from backend import gemini_connection # Assume que gemini_connection.py está em backend/
+from backend import gemini_connection
 from backend import pdf_reader
 from backend import text_filter
+from backend import patient_db # Importar o novo módulo
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS
+CORS(app)
 
-
-
-#A FUNÇÃO ABAIXO DE EXTRAIR OS DADOS DO PRONTUÁRIO AMPLIMED NÃO ESTÁ FUNCIONANDO
-
+# LEITURA DE DADOS AMPLIMED (PRONTUÁRIO NO BROWSER) NÃO ESTÁ FUNCIONANDO, MAS FOI ADICIONADA UMA IMPLEMENTAÇÃO INICIAL PARA FILTRAGEM DE DADOS:
 @app.route('/api/extracted-data', methods=['POST'])
 def receive_extracted_data():
     try:
-        # 1. Receber os dados do front-end
         data = request.json
         if not data:
             return jsonify({"status": "error", "message": "Nenhum dado recebido"}), 400
 
-        # 2. Preparar o texto dos dados do paciente para enviar para a IA
-        formatted_patient_data = "Dados do paciente:\n"
-        if isinstance(data, list): # Checa se data é uma lista como esperado
-             for item in data:
-                  # Assume que cada item tem 'role' e 'text'
+        patient_id = data.get('patient_id')
+        new_patient_id_generated = None
+
+        if not patient_id:
+            patient_id = patient_db.generate_patient_id()
+            new_patient_id_generated = patient_id # Sinaliza para retornar ao frontend
+        
+        patient_db.ensure_patient_exists(patient_id)
+
+        formatted_patient_data = "Dados do paciente extraídos da página:\n"
+        if isinstance(data.get('extracted_content'), list): # Supondo que os dados extraídos estejam em 'extracted_content'
+             for item in data['extracted_content']:
                   if isinstance(item, dict) and 'role' in item and 'text' in item:
                        formatted_patient_data += f"{item['role']}: {item['text']}\n"
                   else:
                        print(f"Item de dado ignorado por formato inválido: {item}")
         else:
-             print(f"Formato de dado inesperado recebido: {type(data)}")
-             formatted_patient_data += str(data) # Tentativa genérica
+             formatted_patient_data += str(data.get('extracted_content', ''))
 
-   
-        print(f"\nEnviando para Gemini:\n{formatted_patient_data}") 
-        ai_response = gemini_connection.send_message(formatted_patient_data)
+        # Opcional: Remover nomes dos dados formatados antes de enviar para IA ou salvar
+        # formatted_patient_data_filtered = text_filter.remover_nomes(formatted_patient_data)
 
-        # 4. Retornar a resposta da IA para o front-end
-        return jsonify({
+        print(f"\nEnviando dados extraídos para Gemini (Paciente: {patient_id}):\n{formatted_patient_data}")
+        
+        # Adicionar os dados extraídos como uma mensagem ao histórico
+        # considerar como uma entrada do "usuário" para fins de fluxo de conversação
+        patient_db.add_message_to_history(patient_id, "user", f"Dados extraídos da página: {formatted_patient_data}")
+        
+        ai_response = gemini_connection.send_message(patient_id, formatted_patient_data)
+        patient_db.add_message_to_history(patient_id, "model", ai_response)
+
+        response_data = {
             "status": "success",
             "message": "Dados processados com sucesso pela IA Gemini",
-            "ai_response": ai_response # A resposta já é uma string
-        }), 200
+            "ai_response": ai_response
+        }
+        if new_patient_id_generated:
+            response_data["patient_id"] = new_patient_id_generated
+            
+        return jsonify(response_data), 200
 
     except Exception as e:
-        # Captura erros gerais ou erros levantados pelo gemini_connection
-        print(f"Erro no servidor ao processar dados: {e}")
-        # Tenta obter a stack trace para mais detalhes no log do servidor
         import traceback
         traceback.print_exc()
         return jsonify({"status": "error", "message": f"Erro interno do servidor: {e}"}), 500
-    
 
-# * NOVO ENDPOINT PARA O CHAT *
+# ENDPOINT DO CHAT
 @app.route('/api/chat', methods=['POST'])
 def handle_chat_message():
-    
-    #Recebe uma mensagem de chat do frontend, envia pra IA e retorna a resposta
     try:
-        # 1. Obter a mensagem da requisição JSON
         data = request.json
         if not data or 'message' not in data:
-            print("Erro: Requisição para /api/chat sem 'message' no JSON.")
-            return jsonify({"status": "error", "message": "Requisição inválida. Campo 'message' não encontrado."}), 400
+            return jsonify({"status": "error", "message": "Requisição inválida."}), 400
 
         user_message = data['message']
-        print(f"\nMensagem recebida em /api/chat: {user_message}") # Log
+        patient_id = data.get('patient_id')
+        user_provided_name_for_id = data.get('patient_name_for_id') # pra se o front enviar um nome para associar ao novo ID
 
-        # 2. Enviar a mensagem para a IA usando a função já existente
-        #    A sessão de chat (histórico) é gerenciada dentro de gemini_connection
-        user_message = text_filter.remover_nomes(user_message)
-        # print(user_message)
-        ai_response_text = gemini_connection.send_message(user_message)
+        new_patient_id_generated = None
 
+        if not patient_id:
+            patient_id = patient_db.generate_patient_id()
+            new_patient_id_generated = patient_id
+            # Se um nome foi fornecido para um novo ID, use-o
+            patient_db.ensure_patient_exists(patient_id, name=user_provided_name_for_id)
+        else:
+            patient_db.ensure_patient_exists(patient_id) # Garante que existe, pode atualizar nome se necessário
 
-        # 3. Retornar a resposta da IA para o frontend
-        return jsonify({
+        print(f"\nMensagem recebida para Paciente ID {patient_id}: {user_message}")
+
+        filtered_user_message = text_filter.remover_nomes(user_message)
+        patient_db.add_message_to_history(patient_id, "user", filtered_user_message if filtered_user_message else user_message) # Salva filtrado ou original
+
+        ai_response_text = gemini_connection.send_message(patient_id, filtered_user_message)
+        patient_db.add_message_to_history(patient_id, "model", ai_response_text)
+        
+        response_data = {
             "status": "success",
             "ai_response": ai_response_text
-        }), 200
+        }
+        if new_patient_id_generated:
+            response_data["patient_id"] = new_patient_id_generated
+
+        return jsonify(response_data), 200
 
     except Exception as e:
-        # erros gerais
-        print(f"Erro no endpoint /api/chat: {e}")
         import traceback
         traceback.print_exc()
-        # Retorna erro
-        return jsonify({"status": "error", "message": f"Erro interno do servidor ao processar chat: {e}"}), 500
+        return jsonify({"status": "error", "message": f"Erro interno do servidor: {e}"}), 500
 
-
+# ENDPOINT DOS ARQUIVOS PDF
 @app.route('/api/upload-pdf', methods=['POST'])
 def upload_pdf():
     try:
@@ -103,42 +119,49 @@ def upload_pdf():
             return jsonify({"status": "error", "message": "Nenhum arquivo enviado."}), 400
 
         file = request.files['pdf']
-        if file.filename == '':
-            return jsonify({"status": "error", "message": "Nome de arquivo vazio."}), 400
+        # patient_id pode vir de 'request.form' se enviado como campo de formulário junto com o arquivo
+        patient_id = request.form.get('patient_id') 
+        user_provided_name_for_id = request.form.get('patient_name_for_id')
 
-        # Extrair texto do PDF
+        new_patient_id_generated = None
+
+        if not patient_id:
+            patient_id = patient_db.generate_patient_id()
+            new_patient_id_generated = patient_id
+            patient_db.ensure_patient_exists(patient_id, name=user_provided_name_for_id)
+        else:
+            patient_db.ensure_patient_exists(patient_id)
+
         extracted_text = pdf_reader.extract_text_from_pdf(file)
-        # print(f"Texto extraído do PDF:\n{extracted_text}")
-
         if not extracted_text.strip():
             return jsonify({"status": "error", "message": "Texto extraído está vazio."}), 400
 
-        # Enviar esse texto como mensagem para a IA (como em /api/chat)
-        extracted_text = text_filter.remover_nomes(extracted_text)
-        # print(extracted_text)
-        ai_response_text = gemini_connection.send_message(extracted_text)
+        filtered_extracted_text = text_filter.remover_nomes(extracted_text)
+        
+        # Adicionar o texto extraído como uma mensagem ao histórico
+        context_message_for_pdf = f"O seguinte texto foi extraído de um PDF enviado pelo usuário: \"{filtered_extracted_text}\". Por favor, analise-o e responda às perguntas subsequentes ou forneça um resumo, conforme apropriado."
+        
+        patient_db.add_message_to_history(patient_id, "user", context_message_for_pdf) # Ou "system"
+        
+        ai_response_text = gemini_connection.send_message(patient_id, context_message_for_pdf)
+        patient_db.add_message_to_history(patient_id, "model", ai_response_text)
 
-        # Retornar a resposta da IA
-        return jsonify({
+        response_data = {
             "status": "success",
             "message": "Texto extraído e enviado para a IA com sucesso.",
-            "extracted_text": extracted_text,
+            "extracted_text_preview": extracted_text[:200] + "...", # Apenas uma prévia
             "ai_response": ai_response_text
-        }), 200
+        }
+        if new_patient_id_generated:
+            response_data["patient_id"] = new_patient_id_generated
+            
+        return jsonify(response_data), 200
 
     except Exception as e:
-        print(f"Erro ao processar upload de PDF: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({"status": "error", "message": f"Erro interno ao processar o PDF: {e}"}), 500
 
 if __name__ == '__main__':
-
-    print("Servidor Flask com Gemini iniciado.")
-    print("Certifique-se de que a variável de ambiente GEMINI_API_KEY está definida.")
-    print("Aguardando conexões na porta 3001...")
-    # host='0.0.0.0' permite conexões de outras máquinas na rede
-    # debug=True enquanto está em desenvolvimento
+    print("Servidor Flask com Gemini e DB de Paciente iniciado.")
     app.run(host='0.0.0.0', port=3001, debug=True)
-
-# ----- Fim de server.py -----
