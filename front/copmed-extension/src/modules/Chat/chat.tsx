@@ -1,23 +1,25 @@
 // Chat.tsx
-import React, { useState, useEffect, useRef, Key, ReactNode, } from 'react'; // Adicionado useEffect, useRef
+import React, { useState, useEffect, useRef, Key, ReactNode, } from 'react'; 
 import { Send } from 'lucide-react';
 import './chat.css';
+import ReactMarkdown from 'react-markdown'; 
 
 // 1. Atualizar a Interface de Props
 interface ChatProps {
   messages: Array<{
-    id: Key; // Usar Key como tipo mais genérico para IDs
+    id: Key; // Usar Key como tipo genérico para IDs
     text: ReactNode; // Permitir nós React além de string
     sender: 'user' | 'bot';
     timestamp: string;
   }>;
-  setMessages: React.Dispatch<React.SetStateAction<any>>; // Mantém para adicionar msg do user
+  // A prop setMessages foi removida.
+  // setMessages: React.Dispatch<React.SetStateAction<any>>; 
   onSendMessage: (messageText: string) => void; // Função para notificar App.js
   isLoading: boolean; // Para mostrar feedback de carregamento/desabilitar input
-  onUploadPdf?: (file: File) => void; // <-- Novo prop opcional
+  onUploadPdf?: (file: File) => void; // Novo prop opcional
 }
 
-const Chat: React.FC<ChatProps> = ({ messages, setMessages, onSendMessage, isLoading, onUploadPdf }) => {
+const Chat: React.FC<ChatProps> = ({ messages, onSendMessage, isLoading, onUploadPdf }) => {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<null | HTMLDivElement>(null); // Ref para scroll automático
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -45,28 +47,14 @@ const Chat: React.FC<ChatProps> = ({ messages, setMessages, onSendMessage, isLoa
 
   // Função chamada ao enviar o formulário
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // Previne recarregamento da página
-    if (newMessage.trim() === "" || isLoading) return; // Não envia vazio ou se já estiver carregando
+  e.preventDefault();
+  if (newMessage.trim() === "" || isLoading) return;
 
-    // 2. Cria o objeto da mensagem do usuário (mantém ID simples por enquanto)
-    const userMessage = {
-      id: Date.now(), // Usar timestamp + random é um pouco melhor que length
-      text: newMessage,
-      sender: "user" as const, // Define como 'user'
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) // Formato mais curto
-    };
+  // chama a função onSendMessage passada pelo App.tsx
+  // App.tsx será responsável por adicionar a mensagem do usuário à UI e enviá-la ao backend.
+  onSendMessage(newMessage); 
 
-    // 3. Adiciona a mensagem do usuário à UI imediatamente
-    setMessages((prevMessages: any[]) => [...prevMessages, userMessage]);
-
-    // 4. Chama a função do App.js para enviar ao backend
-    onSendMessage(newMessage);
-
-    // 5. Limpa o campo de input
-    setNewMessage("");
-
-    // 6. REMOVIDO: O bloco setTimeout com a resposta automática foi removido daqui.
-    //    A resposta real virá do App.js quando o backend responder.
+  setNewMessage(""); // Limpa o campo de input
   };
 
   return (
@@ -85,7 +73,18 @@ const Chat: React.FC<ChatProps> = ({ messages, setMessages, onSendMessage, isLoa
             }`}
           >
             <div className="chat-message">
-              <p className="chat-message-text">{message.text}</p>
+              {/*
+                MODIFICAÇÃO PARA RENDERIZAR MARKDOWN:
+                - <p> trocado por um <div> com a mesma className "chat-message-text".
+                  O Markdown pode gerar elementos de bloco (como listas,
+                  múltiplos parágrafos) que não são válidos dentro de um <p>.
+                - componente <ReactMarkdown> para renderizar o message.text.
+                  String(message.text) garante que estamos passando uma string para o ReactMarkdown,
+                  conforme esperado pela biblioteca.
+              */}
+              <div className="chat-message-text">
+                <ReactMarkdown>{String(message.text)}</ReactMarkdown>
+              </div>
               <span className="chat-message-timestamp">{message.timestamp}</span>
             </div>
           </div>

@@ -1,86 +1,80 @@
 import os
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
+# Importar o novo módulo de banco de dados
+from . import patient_db # Usando import relativo
 
-# Configuração da API Gemini 
+# Configuração da API Gemini    
 try:
-    # 1. Carregar a chave de API da variável de ambiente
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        raise ValueError("A variável de ambiente GEMINI_API_KEY não foi encontrada. Certifique-se de que ela está definida.")
+        raise ValueError("A variável de ambiente GEMINI_API_KEY não foi encontrada.")
     genai.configure(api_key=api_key)
-
 except ValueError as e:
     print(f"Erro de configuração da API Gemini: {e}")
-    raise  # Re-levanta a exceção para parar a execução se a chave não for encontrada
+    raise
 
 # Carregar Instrução do Sistema 
 try:
-    # 2. Carregar a instrução inicial 
-    system_instruction_file = './backend/Co-Pilot_medico.txt'
+    system_instruction_file = os.path.join(os.path.dirname(__file__), 'Co-Pilot_medico.txt') # Ajuste de caminho
     if not os.path.exists(system_instruction_file):
          raise FileNotFoundError(f"Arquivo de instrução do sistema não encontrado em: {system_instruction_file}")
-    system_instruction = open(system_instruction_file, encoding='utf-8').read()
-
+    system_instruction_content = open(system_instruction_file, encoding='utf-8').read()
 except FileNotFoundError as e:
      print(f"Erro: {e}")
-     raise # levanta a exceção de nvo
+     raise
 
-#Inicialização do Modelo e Chat 
-try:
-    #Escolher o modelo Gemini
-    model_name = "gemini-1.5-flash-latest"
+# Configurações do Modelo 
+MODEL_NAME = "gemini-1.5-flash-latest" # Movido para constante
+SAFETY_SETTINGS = {
+    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+}
 
-    # Configurações de Segurança (Opcional, ajuste conforme necessário)
-    # Bloqueia conteúdo que atinge níveis Médios ou Altos de perigo.
-    safety_settings = {
-        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-    }
+# REMOVIDO: chat = model.start_chat(history=[]) # Não teremos mais um chat global único
 
-    # Instanciar o modelo com a instrução do sistema e configurações de segurança
-    model = genai.GenerativeModel(
-        model_name=model_name,
-        system_instruction=system_instruction,
-        safety_settings=safety_settings
-        # Podemos adicionar generation_config aqui se precisarmos de mudar temperature, max_output_tokens etc.
-        # generation_config=genai.types.GenerationConfig(temperature=0.7)
-    )
-
-    # Iniciar uma sessão de chat para manter o histórico da conversa
-    chat = model.start_chat(history=[]) # Começa com histórico vazio
-
-except Exception as e:
-    print(f"Erro ao inicializar o modelo Gemini ou o chat: {e}")
-    raise # levanta a exceção novamente
-
-# Função para Interagir com o Chat
-def send_message(message_text):
+def send_message(patient_id: str, message_text: str):
     """
-    Envia uma mensagem para a sessão de chat Gemini e retorna a resposta.
-
-    Args:
-        message_text (str): A mensagem do usuário.
-
-    Returns:
-        str: A resposta de texto do modelo Gemini, ou uma mensagem de erro.
+    Envia uma mensagem para uma sessão de chat Gemini específica do paciente e retorna a resposta.
+    O histórico é carregado do patient_db e formatado para a API Gemini (removendo campos extras).
     """
-    global chat 
-    if not chat:
-         return "Erro: A sessão de chat não foi inicializada corretamente."
-
     try:
-        # Enviar a mensagem para a API através da sessão de chat
-        # O histórico é gerenciado automaticamente pelo objeto 'chat'
-        response = chat.send_message(message_text)
+        # Carregar histórico do paciente do nosso banco de dados JSON
+        history_from_db = patient_db.get_patient_chat_history(patient_id)
 
-        # Retornar o texto da resposta
+        # Formatar o histórico para a API Gemini.
+        # A API Gemini espera uma lista de objetos Content, cada um com 'role' e 'parts'.
+        gemini_formatted_history = []
+        if history_from_db: # Processa apenas se houver histórico
+            for message_from_db in history_from_db:
+                # Verifica se os campos essenciais ('role' e 'parts') existem na mensagem do DB
+                if "role" in message_from_db and "parts" in message_from_db:
+                    gemini_formatted_history.append({
+                        "role": message_from_db["role"],
+                        "parts": message_from_db["parts"]
+                        # O campo 'timestamp' e quaisquer outros campos extras são omitidos 
+                    })
+                else:
+                    print(f"Aviso: Mensagem mal formatada no histórico do paciente {patient_id} ignorada: {message_from_db}")
+        
+
+        # Instanciar o modelo com a instrução do sistema
+        model = genai.GenerativeModel(
+            model_name=MODEL_NAME, #
+            system_instruction=system_instruction_content, #
+            safety_settings=SAFETY_SETTINGS #
+        )
+
+        # Iniciar uma sessão de chat COM o histórico devidamente formatado
+        chat_session = model.start_chat(history=gemini_formatted_history)
+
+        # Enviar a mensagem atual do usuário (message_text é uma string simples)
+        response = chat_session.send_message(message_text)
+
         return response.text
 
     except Exception as e:
-        print(f"Erro ao enviar mensagem para a API Gemini: {e}")
-        # Retorna uma mensagem de erro para o chamador (o servidor Flask)
-        return f"Erro ao comunicar com a IA: {e}"
-
+        print(f"Erro ao enviar mensagem para a API Gemini para o paciente {patient_id}: {e}") #
+        return f"Desculpe, ocorreu um erro ao tentar me comunicar com a inteligência artificial: {str(e)}" #

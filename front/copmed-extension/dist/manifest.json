@@ -11,6 +11,7 @@
     "permissions": [
         "scripting",
         "activeTab",
+        "storage",
         "*://localhost/*"
     ],
     "host_permissions": [
