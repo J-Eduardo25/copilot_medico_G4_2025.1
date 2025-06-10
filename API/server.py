@@ -13,7 +13,7 @@ from backend import patient_db # Importar o novo módulo
 app = Flask(__name__)
 CORS(app)
 
-# LEITURA DE DADOS AMPLIMED (PRONTUÁRIO NO BROWSER) NÃO ESTÁ FUNCIONANDO, MAS FOI ADICIONADA UMA IMPLEMENTAÇÃO INICIAL PARA FILTRAGEM DE DADOS:
+# LEITURA DE DADOS AMPLIMED (PRONTUÁRIO NO BROWSER) ESTÁ FUNCIONANDO, FOI ADICIONADA UMA IMPLEMENTAÇÃO INICIAL PARA FILTRAGEM DE DADOS:
 @app.route('/api/extracted-data', methods=['POST'])
 def receive_extracted_data():
     try:

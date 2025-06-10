@@ -22,5 +22,12 @@
         "32": "copilot-icon.png",
         "48": "CopMed_LogoBig.png",
         "128": "CopMed_LogoBig.png"
-    }
+    },
+    "content_scripts": [
+        {
+        "matches": ["<all_urls>"],
+        "js": ["content.js"],
+        "all_frames": true
+        }
+    ]
 }
