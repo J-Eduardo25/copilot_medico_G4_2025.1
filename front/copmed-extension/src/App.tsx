@@ -207,10 +207,15 @@ function App() {
 
   const sendExtractedDataToServer = async (extractedData: any) => {
     try {
+      const payload = {
+        extracted_content: extractedData,
+        patient_id: currentPatientId
+      };
+
       const response = await fetch('http://localhost:3001/api/extracted-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(extractedData)
+        body: JSON.stringify(payload)
       });
       if (response.ok) {
         console.log('Dados extraídos enviados com sucesso para /api/extracted-data');
