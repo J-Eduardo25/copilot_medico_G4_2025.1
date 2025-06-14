@@ -1,64 +1,67 @@
-import { useState, useEffect, useCallback, Key, ReactNode } from 'react'; // Importações necessárias do React
+import { useState, useEffect, useCallback, Key, ReactNode } from 'react';
 import './App.css';
-import Chat from './modules/Chat/chat'; // Importa o componente Chat
-import { executeScriptOnActiveTab } from './utils/utils'; // função utilitária
+import Chat from './modules/Chat/chat';
+import { executeScriptOnActiveTab } from './utils/utils';
 
 
 // Define a estrutura exata esperada para cada objeto de mensagem
 type Message = {
   id: Key;
   text: ReactNode;
-  sender: 'user' | 'bot'; // Sender 
+  sender: 'user' | 'bot';
   timestamp: string;
 };
 
 function App() {
-  //  Estados relacionados ao Debug e Extração
+  // Estados relacionados ao Debug e Extração
   const [currentPatientId, setCurrentPatientId] = useState<string | null>(null);
   const [debugSelector, setDebugSelector] = useState('.note-editable[role="textbox"]');
   const [debugIndex, setDebugIndex] = useState(0);
   const [extractedText, setExtractedText] = useState<string | null>(null);
   const [debugMode, setDebugMode] = useState(false);
-  // Fim dos Estados de Debug 
-
+  
   // Estados do Chat 
-  const [isLoading, setIsLoading] = useState(false); // Estado para feedback de carregamento da IA
-  const [messages, setMessages] = useState<Message[]>([ // USA O TIPO Message[] explicitamente
-  {
-      id: 1, // ID inicial
-      text: "Olá! Sou o assistente virtual Copilot. Como posso ajudar?", // Mensagem inicial
-      sender: "bot", // Sender inicial é 'bot' (compatível com o tipo)
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) // Timestamp formatado
+  const [isLoading, setIsLoading] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 1,
+      text: "Olá! Sou o assistente virtual Copilot. Como posso ajudar?",
+      sender: "bot",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     },
   ]);
 
-
-
-  // Carregar patientId do chrome.storage ao montar o componente
+  // Carrega dados da sessão, como o ID do paciente e o histórico de mensagens,
+  // do storage do navegador sempre que a extensão é aberta.
   useEffect(() => {
-    chrome.storage.local.get(['copilotMedicoPatientId'], (result) => {
+    chrome.storage.local.get(['copilotMedicoPatientId', 'chatMessages'], (result) => {
       if (result.copilotMedicoPatientId) {
         setCurrentPatientId(result.copilotMedicoPatientId);
-        // Opcional: carregar o histórico de mensagens para este patientId do backend
-        // ou deixar que o backend use o ID para contextualizar a primeira mensagem, analisar depois a implementação !!!!!!!!
+      }
+      if (result.chatMessages && result.chatMessages.length > 0) {
+        setMessages(result.chatMessages);
       }
     });
   }, []);
 
-  // Função para limpar o ID do paciente e iniciar uma nova sessão
+  // Salva o histórico de mensagens no storage do navegador automaticamente
+  // sempre que uma nova mensagem é adicionada ao chat.
+  useEffect(() => {
+    chrome.storage.local.set({ chatMessages: messages });
+  }, [messages]);
+
+  // Limpa os dados da sessão atual e reinicia o chat para um novo paciente.
   const handleNewPatientSession = () => {
     setCurrentPatientId(null);
     chrome.storage.local.remove('copilotMedicoPatientId');
-    setMessages([
-      {
-        id: 1,
-        text: "Olá! Sou o assistente virtual Copilot. Como posso ajudar?",
-        sender: "bot",
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      },
-    ]); // Reinicia mensagens
+    const initialMessage: Message = {
+      id: 1,
+      text: "Nova sessão iniciada. Como posso ajudar?",
+      sender: "bot",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    setMessages([initialMessage]);
   };
- 
 
   // Função simples para gerar IDs 
   const generateId = (): Key => Date.now() + Math.random();
@@ -79,81 +82,71 @@ function App() {
   const handleUploadPdf = async (file: File) => {
     if (!file) return;
 
-    setIsLoading(true); //
+    setIsLoading(true);
 
-    // Adiciona uma mensagem à UI indicando que o PDF está sendo processado.
-    // O usuário vê isso imediatamente.
     const processingUserMessage: Message = {
-      id: generateId(), //
+      id: generateId(),
       text: `Enviando e processando o arquivo: ${file.name}...`,
-      sender: "user", // Pode ser "user" ou um tipo "system" se preferir
+      sender: "user",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     setMessages(prevMessages => [...prevMessages, processingUserMessage]);
 
-    const formData = new FormData(); //
-    formData.append('pdf', file); //
+    const formData = new FormData();
+    formData.append('pdf', file);
 
-    // Inclui o patient_id se existir, para que o backend saiba a qual sessão/paciente associar.
     if (currentPatientId) {
       formData.append('patient_id', currentPatientId);
     }
 
     try {
-      const response = await fetch('http://localhost:3001/api/upload-pdf', { //
-        method: 'POST', //
+      const response = await fetch('http://localhost:3001/api/upload-pdf', {
+        method: 'POST',
         body: formData
-        // Nota: Para FormData, o browser define o Content-Type (multipart/form-data) automaticamente.
       });
 
-      setIsLoading(false); //
+      setIsLoading(false);
       const data = await response.json();
 
-      if (response.ok) { //
-        // Se o backend gerou e retornou um novo patient_id (porque não foi enviado um),
-        // atualiza o estado e o chrome.storage.
+      if (response.ok) {
         if (data.patient_id && !currentPatientId) {
           setCurrentPatientId(data.patient_id);
           chrome.storage.local.set({ copilotMedicoPatientId: data.patient_id });
         }
 
-        // Adiciona a resposta da IA (ou mensagem de status do processamento do PDF) ao chat.
         const botResponseText = data.ai_response || data.message || "PDF processado. Nenhuma resposta adicional da IA.";
-        const botMessage: Message = { //
-          id: generateId(), //
+        const botMessage: Message = {
+          id: generateId(),
           text: botResponseText,
-          sender: "bot", //
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) //
+          sender: "bot",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
-        setMessages(prevMessages => [...prevMessages, botMessage]); //
+        setMessages(prevMessages => [...prevMessages, botMessage]);
       } else {
-        // O backend respondeu com um erro (status 4xx ou 5xx).
         const errorText = data.message || `Erro ao processar PDF (${response.status}).`;
-        const errorMessage: Message = { //
-          id: generateId(), //
+        const errorMessage: Message = {
+          id: generateId(),
           text: errorText,
-          sender: "bot", //
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) //
+          sender: "bot",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
-        setMessages(prevMessages => [...prevMessages, errorMessage]); //
+        setMessages(prevMessages => [...prevMessages, errorMessage]);
       }
     } catch (error) {
-      // Erro de rede ou ao tentar fazer o fetch.
-      console.error('Erro de rede ao enviar PDF:', error); //
-      setIsLoading(false); //
+      console.error('Erro de rede ao enviar PDF:', error);
+      setIsLoading(false);
       
       const networkErrorText = error instanceof Error ? error.message : "Verifique a conexão e o backend.";
-      const errorMessage: Message = { //
-        id: generateId(), //
+      const errorMessage: Message = {
+        id: generateId(),
         text: `Falha no upload do PDF: ${networkErrorText}`,
-        sender: "bot", //
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) //
+        sender: "bot",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
-      setMessages(prevMessages => [...prevMessages, errorMessage]); //
+      setMessages(prevMessages => [...prevMessages, errorMessage]);
     }
   };
   
-
   const createInputs = async () => {
     const inputKeys = ["peso", "altura", "imc", "tempe", "freqres", "freqcar", "pas", "pad"]
     let inputs = []
@@ -205,20 +198,24 @@ function App() {
   const extractSingleDiv = async (selector: any, index: any): Promise<string | null> => {
     try {
       const result = await executeScriptOnActiveTab(selector, index);
-      return result || null; // Retorna resultado ou null
+      return result || null;
     } catch (error) {
-      console.error('Erro em extractSingleDiv:', error); // Log do erro
+      console.error('Erro em extractSingleDiv:', error);
       return null;
     }
   };
 
   const sendExtractedDataToServer = async (extractedData: any) => {
- 
     try {
+      const payload = {
+        extracted_content: extractedData,
+        patient_id: currentPatientId
+      };
+
       const response = await fetch('http://localhost:3001/api/extracted-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(extractedData)
+        body: JSON.stringify(payload)
       });
       if (response.ok) {
         console.log('Dados extraídos enviados com sucesso para /api/extracted-data');
@@ -226,18 +223,15 @@ function App() {
         return dados;
       } else {
         console.log(`Erro ${response.status} ao enviar dados extraídos para /api/extracted-data`);
-
         return null;
       }
     } catch (error) {
       console.error('Erro de rede ao enviar dados extraídos:', error);
-
       return null;
     }
   }
 
   const handleExtractData = async () => {
-
     console.log("Botão 'Extrair Dados da Página' clicado.");
     try {
       const [staticData, dinamicData] = await Promise.all([
@@ -247,42 +241,35 @@ function App() {
       const combinedData = [...staticData, ...dinamicData];
       console.log("Dados combinados para enviar:", combinedData);
 
-      // Só envia se houver dados
       if (combinedData.length > 0) {
         const dados = await sendExtractedDataToServer(combinedData);
         console.log('Resposta do servidor para dados extraídos:', dados);
 
-        // Adiciona resposta ao chat SE existir ai_response
         if (dados && dados.ai_response) {
-            const botResponse: Message = { // Usa o tipo Message
+            const botResponse: Message = {
                 id: generateId(),
                 text: dados.ai_response,
                 sender: "bot",
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             };
-            // Usa callback no setMessages para segurança
             setMessages(prevMessages => [...prevMessages, botResponse]);
         } else if (dados) {
-             console.warn("Servidor respondeu para /extracted-data, mas sem ai_response.");
-             // Adicionar mensagem informativa
-             const infoMsg: Message = { id: generateId(), text: "Dados da página enviados, mas não houve resposta da IA para exibir.", sender: 'bot', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-             setMessages(prev => [...prev, infoMsg]);
+            console.warn("Servidor respondeu para /extracted-data, mas sem ai_response.");
+            const infoMsg: Message = { id: generateId(), text: "Dados da página enviados, mas não houve resposta da IA para exibir.", sender: 'bot', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+            setMessages(prev => [...prev, infoMsg]);
         } else {
-             // Se sendExtractedDataToServer der erro e retornar null ou undefined
-             const errorMsg: Message = { id: generateId(), text: "Falha ao enviar ou processar os dados extraídos da página.", sender: 'bot', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-             setMessages(prev => [...prev, errorMsg]);
+            const errorMsg: Message = { id: generateId(), text: "Falha ao enviar ou processar os dados extraídos da página.", sender: 'bot', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+            setMessages(prev => [...prev, errorMsg]);
         }
       } else {
           console.log("Nenhum dado extraído da página para enviar.");
-          // Informar usuário que nada foi extraído
-           const infoMsg: Message = { id: generateId(), text: "Não encontrei dados para extrair nesta página.", sender: 'bot', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-           setMessages(prev => [...prev, infoMsg]);
+          const infoMsg: Message = { id: generateId(), text: "Não encontrei dados para extrair nesta página.", sender: 'bot', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+          setMessages(prev => [...prev, infoMsg]);
       }
-
     } catch (error) {
       console.error('Erro no processo de extração de dados:', error);
-       const errorMsg: Message = { id: generateId(), text: "Ocorreu um erro durante a extração de dados.", sender: 'bot', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-       setMessages(prev => [...prev, errorMsg]);
+      const errorMsg: Message = { id: generateId(), text: "Ocorreu um erro durante a extração de dados.", sender: 'bot', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+      setMessages(prev => [...prev, errorMsg]);
     }
   };
 
@@ -290,13 +277,9 @@ function App() {
     setDebugMode(!debugMode);
   }
   
-
-
-  // FUNÇÃO PARA LIDAR COM AS MENSAGENS DO CHAT (NOVA FUNCIONALIDADE)
   const handleSendMessage = useCallback(async (userMessageText: string) => {
     if (!userMessageText.trim() || isLoading) return;
 
-    // Adiciona a mensagem do usuário à UI imediatamente
     const userUIMessage: Message = {
       id: generateId(),
       text: userMessageText,
@@ -318,10 +301,10 @@ function App() {
         body: JSON.stringify(payload)
       });
 
-      const data = await response.json(); // Tenta parsear JSON mesmo se !response.ok para obter msg de erro do backend
+      const data = await response.json();
 
       if (response.ok) {
-        if (data.patient_id && !currentPatientId) { // Se um novo ID foi retornado
+        if (data.patient_id && !currentPatientId) {
           setCurrentPatientId(data.patient_id);
           chrome.storage.local.set({ copilotMedicoPatientId: data.patient_id });
         }
@@ -333,23 +316,21 @@ function App() {
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           };
           setMessages(prevMessages => [...prevMessages, botMessage]);
-        } else if (!data.ai_response && data.message) { // Backend pode ter enviado uma mensagem informativa sem ser um erro
+        } else if (!data.ai_response && data.message) {
           const infoMsg: Message = { id: generateId(), text: data.message, sender: 'bot', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
           setMessages(prevMessages => [...prevMessages, infoMsg]);
         } else {
-           console.error("Resposta do /api/chat OK, mas sem ai_response ou message:", data);
-           const errMsg: Message = { id: generateId(), text: "Recebi uma resposta inesperada do servidor.", sender: 'bot', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-           setMessages(prevMessages => [...prevMessages, errMsg]);
+          console.error("Resposta do /api/chat OK, mas sem ai_response ou message:", data);
+          const errMsg: Message = { id: generateId(), text: "Recebi uma resposta inesperada do servidor.", sender: 'bot', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+          setMessages(prevMessages => [...prevMessages, errMsg]);
         }
       } else {
-        // O backend respondeu com erro (status 4xx ou 5xx)
         const errorText = data.message || `Desculpe, ocorreu um erro no servidor (${response.status}).`;
         console.error(`Erro do backend (${response.status}) ao processar /api/chat:`, errorText);
         const errMsg: Message = { id: generateId(), text: errorText, sender: 'bot', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
         setMessages(prevMessages => [...prevMessages, errMsg]);
       }
     } catch (error) {
-      // Erro de rede ou ao tentar fazer o fetch
       console.error('Erro de rede ao enviar mensagem para /api/chat:', error);
       const networkErrorText = error instanceof Error ? error.message : "Verifique a conexão e o backend.";
       const errMsg: Message = { id: generateId(), text: `Erro de conexão: ${networkErrorText}`, sender: 'bot', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
@@ -357,24 +338,18 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, currentPatientId]); // Dependências corretas para o useCallback
- 
-
-
-  //  Renderização do Componente
+  }, [isLoading, currentPatientId]);
+  
   return (
     <>
-      {/* Renderiza o componente Chat, passando as props necessárias e corrigidas */}
       <Chat
-        messages={messages}           // Passa o array de mensagens 
-        onSendMessage={handleSendMessage} // Passa a função para o Chat chamar ao enviar
-        isLoading={isLoading}         // Passa o estado de carregamento
-        onUploadPdf={handleUploadPdf} 
+        messages={messages}
+        onSendMessage={handleSendMessage}
+        isLoading={isLoading}
+        onUploadPdf={handleUploadPdf}
       />
-
-      {/*Card com os botões de Debug e Extração (Mantidos como no seu original) */}
+      
       <div className="card">
-        
         <button onClick={handleNewPatientSession}>Nova Sessão de Paciente</button>
         <button onClick={handleDebugMode}>Debug</button>
         {
@@ -397,4 +372,4 @@ function App() {
   );
 }
 
-export default App; // Exporta o componente
+export default App;

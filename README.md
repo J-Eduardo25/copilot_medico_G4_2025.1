@@ -17,6 +17,7 @@
   - JavaScript (v18.12.1)
   - Extensão Chrome ("manifest_version" : 3)
   - Node
+  - React
 
 #### Backend
 
@@ -26,7 +27,12 @@
   pip install google-generativeai Flask spacy PyPDF2
   ```
 
-2. Gere uma chave API do gemini no site deles e coloque-a nas variáveis de ambiente do seu sistema em PATH
+  ```bash
+  python -m spacy download       pt_core_news_lg
+  ```
+
+
+2. Gere uma chave API do gemini no site e coloque-a nas variáveis de ambiente do seu sistema em PATH. Se quiser fazer no código, altere a variável api_key no arquivo gemini_connection dentro da pasta backend.
    
 #### Frontend
 
@@ -64,11 +70,12 @@
    - Navegue até o diretório `dist` gerado no passo anterior e selecione-o.
 
 4. Inicie o servidor:
+   No diretório API:
    ```bash
    python server.py
    ```
    
-5. Teste a extensão:
+6. Teste a extensão:
    - A extensão deve aparecer na sua barra de ferramentas. Clique nela para começar a usar!
 
 ---
