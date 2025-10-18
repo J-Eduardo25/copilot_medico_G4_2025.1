@@ -1,69 +1,260 @@
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+#root {
+    max-width: 360px;
+    margin: 0 auto;
+    padding: 1rem;
+    text-align: left;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+.card {
+    padding: .75rem;
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
+/* CORREÇÃO 1: Removido o :root do tema light que estava sobrescrevendo tudo */
+/* CORREÇÃO 2: Separado corretamente os estilos para cada tema */
 
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+@media (prefers-color-scheme: dark) {
+    /* TEMA ESCURO */
+    :root {
+        color: #ffffffde;
+        background-color: #242424;
+    }
+    
+    .chat-container {
+        background-color: #4b4848; 
+    }
+    .chat-header {
+        background-color: #2d2d2d; /* CORREÇÃO: Alterado para cor escura */
+    }
+    .chat-title {
+        color: #ffffff; /* CORREÇÃO: Alterado para cor clara no tema escuro */
+    }
+    .chat-messages {
+        background-color: #3a3a3a; /* CORREÇÃO: Adicionado fundo escuro */
+        color: #ffffff;
+    }
+    .chat-message-user .chat-message {
+        background-color: #1e40af; /* CORREÇÃO: Azul mais escuro */
+        color: #fff;
+    }
+    .chat-message-bot .chat-message {
+        background-color: #4b5563; /* CORREÇÃO: Cinza escuro */
+        color: #f3f4f6;
+    }
+    .chat-input {
+        border: 1px solid #4b5563;
+        background-color: #374151;
+        color: #ffffff;
+    }
+    .chat-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px #3b82f633;
+    }
+    .chat-send-button {
+        background-color: #3b82f6;
+        color: #fff;
+    }
+    .chat-send-button:hover {
+        background-color: #2563eb;
+    }
+    button {
+        background-color: #353535;
+    }
 }
 
 @media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+    /* TEMA CLARO */
+    :root {
+        color: #213547;
+        background-color: #fff;
+    }
+    
+    .chat-container {
+        background-color: #f8f9fa; /* CORREÇÃO: Alterado para cor clara */
+    }
+    .chat-header {
+        background-color: #fff;
+    }
+    .chat-title {
+        color: #1f2937;
+    }
+    .chat-messages {
+        background-color: #fff;
+    }
+    .chat-message-user .chat-message {
+        background-color: #3b82f6;
+        color: #fff;
+    }
+    .chat-message-bot .chat-message {
+        background-color: #e5e7eb;
+        color: #1f2937;
+    }
+    .chat-input {
+        border: 1px solid #d1d5db;
+        background-color: #ffffff;
+        color: #1f2937;
+    }
+    .chat-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px #3b82f633;
+    }
+    .chat-send-button {
+        background-color: #3b82f6;
+        color: #fff;
+    }
+    .chat-send-button:hover {
+        background-color: #2563eb;
+    }
+    
+    /* CORREÇÃO: Estilos de links e botões movidos para fora dos media queries */
+    a:hover {
+        color: #747bff;
+    }
+    button {
+        background-color: #f9f9f9;
+    }
 }
+
+/* CORREÇÃO 3: Estilos gerais movidos PARA FORA dos media queries */
+/* Esses estilos são aplicados independentemente do tema */
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 480px;
+    width: 320px;
+    margin: 0 auto;
+    padding: .75rem;
+    border-radius: .5rem;
+}
+
+.chat-header {
+    border-radius: .5rem;
+    padding: .75rem;
+    margin-bottom: .75rem;
+    box-shadow: 0 1px 3px #0000001a;
+}
+
+.chat-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: .75rem;
+    padding: .75rem;
+    border-radius: .5rem;
+    box-shadow: 0 1px 3px #0000001a;
+}
+
+.chat-message-wrapper {
+    display: flex;
+    margin-bottom: .75rem;
+}
+
+.chat-message-user {
+    justify-content: flex-end;
+}
+
+.chat-message-bot {
+    justify-content: flex-start;
+}
+
+.chat-message {
+    max-width: 80%;
+    padding: .5rem;
+    border-radius: .5rem;
+}
+
+.chat-message-text {
+    margin: 0;
+    font-size: .875rem;
+}
+
+.chat-message-timestamp {
+    display: block;
+    font-size: .75rem;
+    margin-top: .25rem;
+    opacity: .75;
+}
+
+.chat-form {
+    display: flex;
+    gap: .5rem;
+}
+
+.chat-input {
+    flex: 1;
+    padding: .5rem;
+    border-radius: .5rem;
+    outline: none;
+}
+
+.chat-send-button {
+    padding: .5rem;
+    border: none;
+    border-radius: .5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* CORREÇÃO 4: Estilos do :root movidos para fora e organizados */
+:root {
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    color-scheme: light dark; /* IMPORTANTE: Habilita suporte a temas */
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* CORREÇÃO 5: Estilos gerais de elementos movidos para fora */
+a {
+    font-weight: 500;
+    color: #646cff;
+    text-decoration: inherit;
+}
+
+a:hover {
+    color: #535bf2;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    place-items: center;
+    min-width: 320px;
+    min-height: 100vh;
+}
+
+h1 {
+    font-size: 3.2em;
+    line-height: 1.1;
+}
+
+button {
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: .6em 1.2em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color .25s;
+}
+
+button:hover {
+    border-color: #646cff;
+}
+
+button:focus,
+button:focus-visible {
+    outline: 4px auto -webkit-focus-ring-color;
+}
+

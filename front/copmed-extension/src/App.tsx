@@ -3,6 +3,8 @@ import './App.css';
 import Chat from './modules/Chat/chat';
 import { executeArbitraryScriptOnActiveTab, executeScriptOnActiveTab } from './utils/utils'; 
 
+// Arquivo App.css não contém nenhm dado
+
 const SERVER_URL = 'http://localhost:3001';
 
 // --- Tipos ---
