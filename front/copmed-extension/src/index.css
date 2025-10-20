@@ -55,15 +55,68 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+
+/* ================================================= */
+/* CORREÇÃO PARA OS MODAIS - CORES DOS TEXTOS */
+/* ================================================= */
+
+/* Modal de criar paciente */
+div[style*="position: fixed"][style*="background-color: rgba(0, 0, 0, 0.5)"] {
+    background-color: rgba(0, 0, 0, 0.7) !important;
 }
+
+div[style*="background-color: white"][style*="border-radius: 8px"] {
+    background-color: #2d2d2d !important; /* Fundo escuro */
+    color: #ffffff !important; /* Texto branco */
+    border: 1px solid #444 !important;
+}
+
+/* Textos dentro do modal */
+div[style*="background-color: white"] h3,
+div[style*="background-color: white"] p,
+div[style*="background-color: white"] label,
+div[style*="background-color: white"] strong,
+div[style*="background-color: white"] small {
+    color: #ffffff !important; /* Força texto branco */
+}
+
+/* Inputs dentro do modal */
+div[style*="background-color: white"] input,
+div[style*="background-color: white"] select {
+    background-color: #374151 !important;
+    color: #ffffff !important;
+    border: 1px solid #4b5563 !important;
+}
+
+/* Botões dentro do modal */
+div[style*="background-color: white"] button {
+    background-color: #3b82f6 !important;
+    color: #ffffff !important;
+    border: 1px solid #2563eb !important;
+}
+
+div[style*="background-color: white"] button[style*="background-color: #ccc"] {
+    background-color: #6b7280 !important; /* Cinza para botão cancelar */
+    color: #ffffff !important;
+}
+
+/* CORREÇÃO PARA LINKS LONGS NAS MENSAGENS */
+.chat-message-text {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+}
+
+.chat-message-text a {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    word-break: break-all !important;
+    display: inline-block !important;
+    max-width: 100% !important;
+}
+
+.chat-message {
+    overflow-wrap: break-word !important;
+}
+
+
